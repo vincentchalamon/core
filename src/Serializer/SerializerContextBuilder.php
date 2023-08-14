@@ -52,6 +52,9 @@ final class SerializerContextBuilder implements SerializerContextBuilderInterfac
         $context['uri'] = $request->getUri();
         $context['input'] = $operation->getInput();
         $context['output'] = $operation->getOutput();
+        if (method_exists($operation, 'getItemUriTemplate') && $operation->getItemUriTemplate()) {
+            $context['item_uri_template'] = $operation->getItemUriTemplate();
+        }
 
         if ($operation->getTypes()) {
             $context['types'] = $operation->getTypes();

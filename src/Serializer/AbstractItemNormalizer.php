@@ -20,7 +20,6 @@ use ApiPlatform\Exception\InvalidArgumentException;
 use ApiPlatform\Exception\ItemNotFoundException;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\CollectionOperationInterface;
-use ApiPlatform\Metadata\Exception\OperationNotFoundException;
 use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
 use ApiPlatform\Metadata\Property\Factory\PropertyNameCollectionFactoryInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
@@ -56,6 +55,7 @@ abstract class AbstractItemNormalizer extends AbstractObjectNormalizer
     use CloneTrait;
     use ContextTrait;
     use InputOutputMetadataTrait;
+    use OperationContextTrait;
 
     protected PropertyAccessorInterface $propertyAccessor;
     protected array $localCache = [];
@@ -138,6 +138,10 @@ abstract class AbstractItemNormalizer extends AbstractObjectNormalizer
             unset($context['operation_name']);
             unset($context['operation']);
             unset($context['iri']);
+        }
+
+        if ($context['api_sub_level'] ?? false) {
+            unset($context['item_uri_template']);
         }
 
         if ($this->resourceClassResolver->isResourceClass($resourceClass)) {
@@ -882,30 +886,5 @@ abstract class AbstractItemNormalizer extends AbstractObjectNormalizer
         } catch (NoSuchPropertyException) {
             // Properties not found are ignored
         }
-    }
-
-    private function createOperationContext(array $context, string $resourceClass = null): array
-    {
-        if (isset($context['operation']) && !isset($context['root_operation'])) {
-            $context['root_operation'] = $context['operation'];
-            $context['root_operation_name'] = $context['operation_name'];
-        }
-
-        unset($context['iri'], $context['uri_variables']);
-        if (!$resourceClass) {
-            return $context;
-        }
-
-        unset($context['operation'], $context['operation_name']);
-        $context['resource_class'] = $resourceClass;
-        if ($this->resourceMetadataCollectionFactory) {
-            try {
-                $context['operation'] = $this->resourceMetadataCollectionFactory->create($resourceClass)->getOperation();
-                $context['operation_name'] = $context['operation']->getName();
-            } catch (OperationNotFoundException) {
-            }
-        }
-
-        return $context;
     }
 }
